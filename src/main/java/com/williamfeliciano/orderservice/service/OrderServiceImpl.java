@@ -1,6 +1,7 @@
 package com.williamfeliciano.orderservice.service;
 
 import com.williamfeliciano.orderservice.entity.Order;
+import com.williamfeliciano.orderservice.external.client.ProductService;
 import com.williamfeliciano.orderservice.model.OrderRequest;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public class OrderServiceImpl implements OrderService{
     private OrderRepository orderRepository;
+    private ProductService productService;
     @Override
     public Long placeOrder(OrderRequest orderRequest) {
 
@@ -21,6 +23,10 @@ public class OrderServiceImpl implements OrderService{
         // Product Service -> Check inventory and reduce if available
         // Payment Service -> Try anc complete payment -> Success-> orderStatus COMPLETE else CANCELEED
         log.info("Placing Order Request: {}", orderRequest);
+
+        productService.reduceQuantity(orderRequest.getProductId(),orderRequest.getQuantity());
+
+        log.info("Creating Order with status CREATED");
         // Creating Order Entity
         Order order = Order.builder()
                 .amount(orderRequest.getAmount())
