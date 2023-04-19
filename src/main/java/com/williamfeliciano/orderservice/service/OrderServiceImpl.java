@@ -1,7 +1,9 @@
 package com.williamfeliciano.orderservice.service;
 
 import com.williamfeliciano.orderservice.entity.Order;
+import com.williamfeliciano.orderservice.external.client.PaymentService;
 import com.williamfeliciano.orderservice.external.client.ProductService;
+import com.williamfeliciano.orderservice.external.request.PaymentRequest;
 import com.williamfeliciano.orderservice.model.OrderRequest;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
 import lombok.AllArgsConstructor;
@@ -16,6 +18,7 @@ import java.time.Instant;
 public class OrderServiceImpl implements OrderService{
     private OrderRepository orderRepository;
     private ProductService productService;
+    private PaymentService paymentService;
     @Override
     public Long placeOrder(OrderRequest orderRequest) {
 
@@ -36,6 +39,28 @@ public class OrderServiceImpl implements OrderService{
                 .productId(orderRequest.getProductId())
                 .build();
         order = orderRepository.save(order);
+        log.info("Calling Payment Service To Complete Payment");
+
+        PaymentRequest paymentRequest =
+                PaymentRequest.builder()
+                        .orderId(order.getId())
+                        .paymentMode(orderRequest.getPaymentMode())
+                        .amount(orderRequest.getAmount())
+                .build();
+
+        String orderStatus = null;
+        try {
+            paymentService.doPayment(paymentRequest);
+            log.info("Payment done successfully changing status to placed");
+            orderStatus = "PLACED";
+        }catch (Exception e) {
+            log.error("Error occurred in payment. Changing order Status to PAYMENT_FAILED");
+            orderStatus = "PAYMENT_FAILED";
+        }
+
+        order.setOrderStatus(orderStatus);
+        orderRepository.save(order);
+
         log.info("Order Placed Successfully with Order ID {}",order.getId());
         return order.getId();
     }
