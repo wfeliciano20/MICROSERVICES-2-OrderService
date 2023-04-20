@@ -5,6 +5,7 @@ import com.williamfeliciano.orderservice.external.client.PaymentService;
 import com.williamfeliciano.orderservice.external.client.ProductService;
 import com.williamfeliciano.orderservice.external.exception.CustomException;
 import com.williamfeliciano.orderservice.external.request.PaymentRequest;
+import com.williamfeliciano.orderservice.external.response.ProductResponse;
 import com.williamfeliciano.orderservice.model.OrderRequest;
 import com.williamfeliciano.orderservice.model.OrderResponse;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
@@ -69,13 +70,20 @@ public class OrderServiceImpl implements OrderService{
 
     @Override
     public OrderResponse getOrderDetails(long orderId) {
-        log.info("Getting Order Details for order with id {}",orderId);
-        Order order = orderRepository.findById(orderId).orElseThrow(()-> new CustomException("Order not found with order id: " + orderId, "NOT_FOUND",404));
+        log.info("Getting Order Details for order with id {}", orderId);
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new CustomException("Order not found with order id: " + orderId, "NOT_FOUND", 404));
+        log.info("Calling Product Service to get Product  with Id {}", order.getProductId());
+        ProductResponse productResponse = productService.getProductById(order.getProductId()).getBody();
         return OrderResponse.builder()
                 .orderId(order.getId())
                 .orderStatus(order.getOrderStatus())
                 .orderDate(order.getOrderDate())
                 .amount(order.getAmount())
-                .build();
+                .productDetails(OrderResponse.ProductDetails.builder()
+                        .productId(productResponse != null ? productResponse.getProductId() : 0)
+                        .productName(productResponse != null ? productResponse.getProductName() : null)
+                        .price(productResponse != null ? productResponse.getPrice() : 0)
+                        .quantity(productResponse != null ? productResponse.getQuantity() : 0)
+                        .build()).build();
     }
 }
