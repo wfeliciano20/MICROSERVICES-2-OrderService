@@ -3,8 +3,10 @@ package com.williamfeliciano.orderservice.service;
 import com.williamfeliciano.orderservice.entity.Order;
 import com.williamfeliciano.orderservice.external.client.PaymentService;
 import com.williamfeliciano.orderservice.external.client.ProductService;
+import com.williamfeliciano.orderservice.external.exception.CustomException;
 import com.williamfeliciano.orderservice.external.request.PaymentRequest;
 import com.williamfeliciano.orderservice.model.OrderRequest;
+import com.williamfeliciano.orderservice.model.OrderResponse;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -63,5 +65,17 @@ public class OrderServiceImpl implements OrderService{
 
         log.info("Order Placed Successfully with Order ID {}",order.getId());
         return order.getId();
+    }
+
+    @Override
+    public OrderResponse getOrderDetails(long orderId) {
+        log.info("Getting Order Details for order with id {}",orderId);
+        Order order = orderRepository.findById(orderId).orElseThrow(()-> new CustomException("Order not found with order id: " + orderId, "NOT_FOUND",404));
+        return OrderResponse.builder()
+                .orderId(order.getId())
+                .orderStatus(order.getOrderStatus())
+                .orderDate(order.getOrderDate())
+                .amount(order.getAmount())
+                .build();
     }
 }
