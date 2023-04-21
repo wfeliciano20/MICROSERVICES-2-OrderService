@@ -5,6 +5,7 @@ import com.williamfeliciano.orderservice.external.client.PaymentService;
 import com.williamfeliciano.orderservice.external.client.ProductService;
 import com.williamfeliciano.orderservice.external.exception.CustomException;
 import com.williamfeliciano.orderservice.external.request.PaymentRequest;
+import com.williamfeliciano.orderservice.external.response.PaymentResponse;
 import com.williamfeliciano.orderservice.external.response.ProductResponse;
 import com.williamfeliciano.orderservice.model.OrderRequest;
 import com.williamfeliciano.orderservice.model.OrderResponse;
@@ -74,16 +75,29 @@ public class OrderServiceImpl implements OrderService{
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new CustomException("Order not found with order id: " + orderId, "NOT_FOUND", 404));
         log.info("Calling Product Service to get Product  with Id {}", order.getProductId());
         ProductResponse productResponse = productService.getProductById(order.getProductId()).getBody();
+        log.info("Calling Payment Service to get Payment Details for order with id {}", order.getId());
+        PaymentResponse paymentResponse = paymentService.getPaymentDetailsByOrderId(order.getId()).getBody();
+        OrderResponse.ProductDetails productDetails = OrderResponse.ProductDetails.builder()
+                .productId(productResponse != null ? productResponse.getProductId() : 0)
+                .productName(productResponse != null ? productResponse.getProductName() : null)
+                .price(productResponse != null ? productResponse.getPrice() : 0)
+                .quantity(productResponse != null ? productResponse.getQuantity() : 0)
+                .build();
+        OrderResponse.PaymentDetails paymentDetails = OrderResponse.PaymentDetails.builder()
+                .paymentId(paymentResponse != null ? paymentResponse.getPaymentId() : 0)
+                .orderId(paymentResponse != null ? paymentResponse.getOrderId() : 0)
+                .amount(paymentResponse != null ? paymentResponse.getAmount() : 0)
+                .paymentDate(paymentResponse != null ? paymentResponse.getPaymentDate() : null)
+                .paymentMode(paymentResponse != null ? paymentResponse.getPaymentMode() : null)
+                .paymentStatus(paymentResponse != null ? paymentResponse.getPaymentStatus() : null)
+                .build();
         return OrderResponse.builder()
                 .orderId(order.getId())
                 .orderStatus(order.getOrderStatus())
                 .orderDate(order.getOrderDate())
                 .amount(order.getAmount())
-                .productDetails(OrderResponse.ProductDetails.builder()
-                        .productId(productResponse != null ? productResponse.getProductId() : 0)
-                        .productName(productResponse != null ? productResponse.getProductName() : null)
-                        .price(productResponse != null ? productResponse.getPrice() : 0)
-                        .quantity(productResponse != null ? productResponse.getQuantity() : 0)
-                        .build()).build();
+                .productDetails(productDetails)
+                .paymentDetails(paymentDetails)
+                .build();
     }
 }
