@@ -28,8 +28,8 @@ spring:
             provider: okta
             authorization-grant-type: client_credentials
             scope: internal
-          client-id: ${OKTA_CLIENT_ID}
-          client-secret: ${OKTA_CLIENT_SECRET}
+            client-id: ${OKTA_CLIENT_ID}
+            client-secret: ${OKTA_CLIENT_SECRET}
         provider:
           okta:
             issuer-uri: ${ISSUER_URI}
