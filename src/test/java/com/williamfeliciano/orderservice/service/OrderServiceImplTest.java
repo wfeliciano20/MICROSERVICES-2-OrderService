@@ -4,12 +4,12 @@ package com.williamfeliciano.orderservice.service;
 import com.williamfeliciano.orderservice.entity.Order;
 import com.williamfeliciano.orderservice.external.client.PaymentService;
 import com.williamfeliciano.orderservice.external.client.ProductService;
+import com.williamfeliciano.orderservice.external.exception.CustomException;
 import com.williamfeliciano.orderservice.external.response.PaymentResponse;
 import com.williamfeliciano.orderservice.external.response.ProductResponse;
 import com.williamfeliciano.orderservice.model.OrderResponse;
 import com.williamfeliciano.orderservice.model.PaymentMode;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -61,6 +61,18 @@ public class OrderServiceImplTest {
         assertEquals(order.getId(),orderResponse.getOrderId());
     }
 
+    @DisplayName("Get Orders - Failure Scenario")
+    @Test
+    void test_When_Order_Not_Found_then_NOT_FOUND(){
+        when(orderRepository.findById(anyLong()))
+                .thenReturn(Optional.ofNullable(null));
+
+        CustomException exception = assertThrows(CustomException.class,()->orderService.getOrderDetails(1));
+
+        verify(orderRepository,times(1)).findById(anyLong());
+        assertEquals("NOT_FOUND",exception.getErrorCode());
+        assertEquals(404,exception.getStatus());
+    }
     private ResponseEntity<PaymentResponse> getMockPaymentResponse() {
         PaymentResponse paymentResponse = PaymentResponse.builder()
                 .paymentId(1)
