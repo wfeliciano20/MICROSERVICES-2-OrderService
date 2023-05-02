@@ -23,6 +23,11 @@ public class OrderServiceImpl implements OrderService{
     private OrderRepository orderRepository;
     private ProductService productService;
     private PaymentService paymentService;
+
+    public OrderServiceImpl() {
+
+    }
+
     @Override
     public Long placeOrder(OrderRequest orderRequest) {
 
