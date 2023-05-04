@@ -5,8 +5,10 @@ import com.williamfeliciano.orderservice.entity.Order;
 import com.williamfeliciano.orderservice.external.client.PaymentService;
 import com.williamfeliciano.orderservice.external.client.ProductService;
 import com.williamfeliciano.orderservice.external.exception.CustomException;
+import com.williamfeliciano.orderservice.external.request.PaymentRequest;
 import com.williamfeliciano.orderservice.external.response.PaymentResponse;
 import com.williamfeliciano.orderservice.external.response.ProductResponse;
+import com.williamfeliciano.orderservice.model.OrderRequest;
 import com.williamfeliciano.orderservice.model.OrderResponse;
 import com.williamfeliciano.orderservice.model.PaymentMode;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
@@ -73,6 +75,43 @@ public class OrderServiceImplTest {
         assertEquals("NOT_FOUND",exception.getErrorCode());
         assertEquals(404,exception.getStatus());
     }
+
+
+    @DisplayName("Place Order - Success Scenario")
+    @Test
+    void test_When_Place_Order_Success(){
+        Order order = getMockOrder();
+        OrderRequest orderRequest = getMockOrderRequest();
+
+
+        when(orderRepository.save(any(Order.class)))
+                .thenReturn(order);
+        when(productService.reduceQuantity(anyLong(),anyLong()))
+                .thenReturn(new ResponseEntity<Void>(HttpStatus.OK));
+        when(paymentService.doPayment(any(PaymentRequest.class)))
+                .thenReturn(new ResponseEntity<Long>(1L,HttpStatus.OK));
+
+        long orderId = orderService.placeOrder(orderRequest);
+
+        verify(orderRepository,times(2))
+                .save(any(Order.class));
+        verify(productService,times(1))
+                .reduceQuantity(anyLong(),anyLong());
+        verify(paymentService,times(1))
+                .doPayment(any(PaymentRequest.class));
+
+        assertEquals(order.getId(),orderId);
+    }
+
+    private OrderRequest getMockOrderRequest() {
+        return OrderRequest.builder()
+                .productId(1)
+                .amount(100)
+                .paymentMode(PaymentMode.DEBIT_CARD)
+                .quantity(10)
+                .build();
+    }
+
     private ResponseEntity<PaymentResponse> getMockPaymentResponse() {
         PaymentResponse paymentResponse = PaymentResponse.builder()
                 .paymentId(1)
@@ -94,7 +133,6 @@ public class OrderServiceImplTest {
                 .build();
         return new ResponseEntity<>(productResponse, HttpStatus.OK);
     }
-
 
     private Order getMockOrder() {
         return Order.builder()
