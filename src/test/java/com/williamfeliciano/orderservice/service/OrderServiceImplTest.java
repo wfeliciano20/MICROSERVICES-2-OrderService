@@ -103,6 +103,33 @@ public class OrderServiceImplTest {
         assertEquals(order.getId(),orderId);
     }
 
+
+    @DisplayName("Place Order - Failure Scenario")
+    @Test
+    void test_When_Place_Order_Fails_Then_Order_Placed(){
+        Order order = getMockOrder();
+        OrderRequest orderRequest = getMockOrderRequest();
+
+
+        when(orderRepository.save(any(Order.class)))
+                .thenReturn(order);
+        when(productService.reduceQuantity(anyLong(),anyLong()))
+                .thenReturn(new ResponseEntity<Void>(HttpStatus.OK));
+        when(paymentService.doPayment(any(PaymentRequest.class)))
+                .thenThrow(new RuntimeException());
+
+        long orderId = orderService.placeOrder(orderRequest);
+
+        verify(orderRepository,times(2))
+                .save(any(Order.class));
+        verify(productService,times(1))
+                .reduceQuantity(anyLong(),anyLong());
+        verify(paymentService,times(1))
+                .doPayment(any(PaymentRequest.class));
+
+        assertEquals(order.getId(), orderId);
+        assertEquals(order.getOrderStatus(), "PAYMENT_FAILED");
+    }
     private OrderRequest getMockOrderRequest() {
         return OrderRequest.builder()
                 .productId(1)
