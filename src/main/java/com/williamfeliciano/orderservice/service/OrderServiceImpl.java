@@ -11,7 +11,9 @@ import com.williamfeliciano.orderservice.model.OrderRequest;
 import com.williamfeliciano.orderservice.model.OrderResponse;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
 import lombok.AllArgsConstructor;
+
 import lombok.extern.log4j.Log4j2;
+
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,13 +22,12 @@ import java.time.Instant;
 @Log4j2
 @AllArgsConstructor
 public class OrderServiceImpl implements OrderService{
+//    @Autowired
     private OrderRepository orderRepository;
+//    @Autowired
     private ProductService productService;
+//    @Autowired
     private PaymentService paymentService;
-
-    public OrderServiceImpl() {
-
-    }
 
     @Override
     public Long placeOrder(OrderRequest orderRequest) {

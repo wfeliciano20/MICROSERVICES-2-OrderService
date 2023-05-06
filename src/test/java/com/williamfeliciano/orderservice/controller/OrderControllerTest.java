@@ -1,8 +1,13 @@
 package com.williamfeliciano.orderservice.controller;
 
 
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.williamfeliciano.orderservice.OrderServiceConfig;
+import com.williamfeliciano.orderservice.entity.Order;
+import com.williamfeliciano.orderservice.external.client.ProductService;
+import com.williamfeliciano.orderservice.model.OrderRequest;
+import com.williamfeliciano.orderservice.model.PaymentMode;
 import com.williamfeliciano.orderservice.repository.OrderRepository;
 import com.williamfeliciano.orderservice.service.OrderService;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -21,17 +26,25 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static java.nio.charset.Charset.defaultCharset;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.util.StreamUtils.copyToString;
 
 @SpringBootTest({"server.port=0"})
@@ -42,6 +55,9 @@ public class OrderControllerTest {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private ProductService productService;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -116,9 +132,36 @@ public class OrderControllerTest {
     }
 
     @Test
-    public void test_WhenPlaceOrder_DoPayment_Success(){
+    public void test_WhenPlaceOrder_DoPayment_Success() throws Exception {
         // First Place Order
         // Get Order by OrderID from DB and check
         // Check output
+        OrderRequest orderRequest = getMockOrderRequest();
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/order/placeOrder")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("Customer")))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(objectMapper.writeValueAsString(orderRequest)))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String orderId = mvcResult.getResponse().getContentAsString();
+
+        Optional<Order> order = orderRepository.findById(Long.valueOf(orderId));
+        assertTrue(order.isPresent());
+
+        Order o = order.get();
+        assertEquals(Long.parseLong(orderId), o.getId());
+        assertEquals("PLACED", o.getOrderStatus());
+        assertEquals(orderRequest.getAmount(), o.getAmount());
+        assertEquals(orderRequest.getQuantity(), o.getQuantity());
+    }
+
+    private OrderRequest getMockOrderRequest() {
+        return OrderRequest.builder()
+                .productId(1)
+                .paymentMode(PaymentMode.DEBIT_CARD)
+                .quantity(10)
+                .amount(200)
+                .build();
     }
 }

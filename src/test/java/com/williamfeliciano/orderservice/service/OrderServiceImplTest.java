@@ -37,7 +37,7 @@ public class OrderServiceImplTest {
     private PaymentService paymentService;
 
     @InjectMocks
-    OrderService orderService = new OrderServiceImpl();
+    OrderService orderService = new OrderServiceImpl(orderRepository, productService, paymentService);
 
     @DisplayName("Get Order - Success Scenario")
     @Test

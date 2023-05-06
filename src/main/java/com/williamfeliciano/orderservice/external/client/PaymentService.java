@@ -21,7 +21,7 @@ public interface PaymentService {
     @GetMapping("/order/{orderId}")
     ResponseEntity<PaymentResponse> getPaymentDetailsByOrderId(@PathVariable("orderId") long orderId);
 
-    default void fallback(Exception e){
+    default ResponseEntity<Long> fallback(Exception e){
         throw new CustomException("Payment Service is down","Payment Service Unavailable",503);
     }
 }
